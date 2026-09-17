@@ -5,6 +5,9 @@ Class for turning a pd.df to a nice NTNUI excel file.
 import pandas as pd
 from pathlib import Path
 
+from openpyxl import load_workbook, Workbook
+from openpyxl.styles import Font, PatternFill
+
 
 def converter(order: pd.DataFrame, filename, sheet_name = 'sheet1'):
     team_order = ['H-ELITE', 'H1', 'H2A', 'H2B', 'H2C', 'H3A', 'H3B', 'H3C','H4A', 'H4B', 'H4C', 'H4D', 'H-Bredde','D-ELITE', 'D1', 'D2A', 'D2B', 'D2C', 'D3A', 'D3B', 'D3C','D4A', 'D4B', 'D4C', 'D4D', 'D-Bredde']
@@ -13,10 +16,18 @@ def converter(order: pd.DataFrame, filename, sheet_name = 'sheet1'):
         .sort_values(by=['_lag_order', 'Navn', 'Produkt'])
         .drop(columns='_lag_order')
     )
-    if Path(filename).is_file():
-        mode = 'a'
+
+    file_path = Path(filename)
+
+    if file_path.is_file():
+        wb = load_workbook(file_path)
+        if sheet_name in wb.sheetnames:
+            del wb[sheet_name]
+        ws = wb.create_sheet(title=sheet_name)
     else:
-        mode = 'w'
+        wb = Workbook()
+        ws = wb.active
+        ws.title = sheet_name
     
     teams = list(dict.fromkeys(order['Lag'].to_list()))
     color_list = ['background-color:#FFE599', 'background-color:#FFF2CC']
@@ -26,50 +37,75 @@ def converter(order: pd.DataFrame, filename, sheet_name = 'sheet1'):
 
     styled_df = order.style.apply(color_rows, axis=1)
 
-    with pd.ExcelWriter(filename, engine='xlsxwriter') as writer:
+    with pd.ExcelWriter(filename, engine='openpyxl', mode='a') as writer:
         styled_df.to_excel(writer, sheet_name=sheet_name, index=False, startrow=1)
 
         workbook  = writer.book
         worksheet = writer.sheets[sheet_name]
 
-        green_format = workbook.add_format({'bg_color':'#93C47D', 'bold': True})
-        title_format = workbook.add_format({'bg_color':'#93C47D', 'bold': True, 'size': 16})
-        person_formats = [
-            workbook.add_format({'bg_color': '#FFE599'}),
-            workbook.add_format({'bg_color': '#FFF2CC'}),
+        green_fill = PatternFill(fill_type='solid', fgColor='93C47D')
+        person_fills = [
+            PatternFill(fill_type='solid', fgColor='FFE599'),
+            PatternFill(fill_type='solid', fgColor='FFF2CC'),
         ]
+        green_font = Font(bold=True)
+        title_font = Font(bold=True, size=16)
 
-        worksheet.merge_range(0,0,0, len(styled_df.columns)-1,'Bestillingsskjema NTNUI Volleyball', title_format)
-        worksheet.write_row(1,0,styled_df.columns.to_list(), green_format)
+        def merge_cells(start_row, start_column, end_row, end_column, value, fill, font=None):
+            worksheet.merge_cells(
+                start_row=start_row,
+                start_column=start_column,
+                end_row=end_row,
+                end_column=end_column,
+            )
+            cell = worksheet.cell(start_row, start_column, value)
+            for row in worksheet.iter_rows(
+                min_row=start_row,
+                max_row=end_row,
+                min_col=start_column,
+                max_col=end_column,
+            ):
+                for merged_cell in row:
+                    merged_cell.fill = fill
+                    if font:
+                        merged_cell.font = font
+
+        merge_cells(1, 1, 1, len(styled_df.columns), 'Bestillingsskjema NTNUI Volleyball', green_fill, title_font)
+        for cell in worksheet[2]:
+            cell.fill = green_fill
+            cell.font = green_font
 
         last_team = order['Lag'].to_list()[0]
         last_row = 0
         for i in range(len(order['Lag'])):
             if order['Lag'].to_list()[i] != last_team:
                 if last_row+2==i+1:
-                    worksheet.write(i+1,0, last_team, green_format)
+                    worksheet.cell(i + 2, 1, last_team).fill = green_fill
+                    worksheet.cell(i + 2, 1).font = green_font
                 else:
-                    worksheet.merge_range(last_row+2, 0, i+1, 0, last_team, green_format)
+                    merge_cells(last_row + 3, 1, i + 2, 1, last_team, green_fill, green_font)
                 if 'Totalt per lag' in order.columns:
-                    worksheet.merge_range(last_row+2, 7, i+1, 7, f'=SUM(g{last_row+2}:g{i+1})', person_formats[teams.index(order['Lag'].to_list()[i-1])%2])
+                    merge_cells(last_row + 3, 8, i + 2, 8, f'=SUM(g{last_row+2}:g{i+1})', person_fills[teams.index(order['Lag'].to_list()[i-1])%2])
                 last_team = order['Lag'].to_list()[i]
                 last_row=i
 
-        worksheet.merge_range(last_row+2, 0, len(order['Lag'])+1, 0, last_team, green_format)
+        merge_cells(last_row + 3, 1, len(order['Lag']) + 2, 1, last_team, green_fill, green_font)
         if 'Totalt per lag' in order.columns:
-            worksheet.merge_range(last_row+2, 7, len(order['Lag'])+1, 7, f'=SUM(g{last_row+2}:g{len(order["Lag"])+1})', person_formats[(len(teams)-1)%2])        # FIXME writes =@SUMMER
+            merge_cells(last_row + 3, 8, len(order['Lag']) + 2, 8, f'=SUM(g{last_row+2}:g{len(order["Lag"])+1})', person_fills[(len(teams)-1)%2])
 
         last_person = order['Navn'].to_list()[0]
         last_row = 0
         for i in range(len(order['Navn'])):
             if order['Navn'].to_list()[i] != last_person:
-                worksheet.merge_range(last_row+2, 1, i+1, 1, last_person, person_formats[teams.index(order['Lag'].to_list()[i-1])%2])
+                person_fill = person_fills[teams.index(order['Lag'].to_list()[i-1])%2]
+                merge_cells(last_row + 3, 2, i + 2, 2, last_person, person_fill)
                 if 'Kostnad enkelt personer' in order.columns:
-                    worksheet.merge_range(last_row+2, 6, i+1, 6, f'=SUM(f{last_row+2}:f{i+1})', person_formats[teams.index(order['Lag'].to_list()[i-1])%2])
+                    merge_cells(last_row + 3, 7, i + 2, 7, f'=SUM(f{last_row+2}:f{i+1})', person_fill)
                 last_person = order['Navn'].to_list()[i]
                 last_row=i
 
-        worksheet.merge_range(last_row+2, 1, len(order['Navn'])+1, 1, last_person, person_formats[(len(teams)-1)%2])
+        person_fill = person_fills[(len(teams)-1)%2]
+        merge_cells(last_row + 3, 2, len(order['Navn']) + 2, 2, last_person, person_fill)
 
         if 'Kostnad enkelt personer' in order.columns:
-            worksheet.merge_range(last_row+2, 6, len(order['Navn'])+1, 6, f'=SUM(f{last_row+2}:f{len(order["Navn"])+1})', person_formats[(len(teams)-1)%2])
+            merge_cells(last_row + 3, 7, len(order['Navn']) + 2, 7, f'=SUM(f{last_row+2}:f{len(order["Navn"])+1})', person_fill)
