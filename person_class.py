@@ -1,4 +1,5 @@
 import pandas as pd
+from datetime import datetime
 
 template = 'mal.xlsx'                               # Excel file for the diffrent product names and descriptions
 prices = 'prisliste.xlsx'                           # Excel file for the price of the diffrent products
@@ -9,13 +10,15 @@ price_df = pd.read_excel(prices)
 coaches_df = pd.read_excel(coaches, skiprows=2)     
 
 class Person:
-    def __init__(self,row):
+    def __init__(self,row, start_timestamp, stop_timestamp):
         self.name = row['Your full name']
         self.team = row['Which team are you playing for? ']
         self.number = row['Your phone number']
         self.mail = row['E-postadresse']
-        self.timestamp = row['Tidsmerke']
+        self.timestamp = str(row['Tidsmerke'])
         self.model = 'herre' if row['Which model do you want?'] == 'Men' else 'dame'
+
+        self.inside_timeframe = self.check_timestamp(start_timestamp, stop_timestamp)
 
         self.is_coach = row['Do you have a coaching position?'] != 'Nei/ No'
         self.coach_offer =0
@@ -37,6 +40,14 @@ class Person:
         self.total_price = 0
 
         self.create_order()
+
+    def check_timestamp(self, date_list1, date_list2):
+        date_list = [int(self.timestamp[8:10]), int(self.timestamp[5:7]), int(self.timestamp[:4])]
+
+        if date_list[2] > date_list2[2] or date_list[2] < date_list1[2]: return False
+        if (date_list[1] > date_list2[1] and date_list[2] == date_list2[2]) or (date_list[1] < date_list1[1] and date_list[1] == date_list1[1]): return False
+        if (date_list[0] > date_list2[0] and date_list[1] == date_list2[1] and date_list[2] == date_list2[2]) or (date_list[0] < date_list1[0] and date_list[1] == date_list1[1] and date_list[2] == date_list1[2]): return False
+        return True
 
     def addPrice(self, product, name_print=None, coachDiscount=False, comment = None):
         if name_print == None:
