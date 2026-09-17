@@ -39,7 +39,10 @@ class Person:
         self.create_order()
 
     def addPrice(self, product, name_print=None, coachDiscount=False, comment = None):
-        price = int(price_df.loc[price_df[price_df.columns[0]] == product, price_df.columns[1]].values[0])
+        if name_print == None:
+            price = int(price_df.loc[price_df[price_df.columns[0]] == product, price_df.columns[1]].values[0])
+        else:
+            price = int(price_df.loc[price_df[price_df.columns[0]] == product, price_df.columns[2]].values[0])
         price = price-self.coach_offer if coachDiscount else price
         if coachDiscount:
             if self.coach_error != None:
@@ -176,7 +179,7 @@ class Person:
         size = self.row["Size sweatpants"]
 
         for _ in range(amount):
-            self.addItem(f'Joggebukse', size)
+            self.addItem(f'Joggebukse (unisex)', size)
             self.addPrice('Joggebukse')
 
     def addEverydaySweaters(self):
@@ -187,8 +190,8 @@ class Person:
 
         colors = ['Hvit']*white+['Sort']*black+['Marineblå']*blue
         for color in colors:
-            self.addItem('Tynn genser (bomull) (også kalt hverdagsgenser)', size, color)
-            self.addPrice('Hverdagsgenser')
+            self.addItem('Tynn genser (bomull)', size, color)
+            self.addPrice('Tynn genser (bomull)')
 
     def addBag(self):
         bag38 = int(self.row['Amount of bags (38L)'])
@@ -196,7 +199,7 @@ class Person:
 
         for _ in range(bag65):
             self.addItem('Bag (stor)', 'L')
-            self.addPrice('Sekk (65 L)')
+            self.addPrice('Bag (65 L)')
         for _ in range(bag38):
             self.addItem('Bag (liten)', 'S')
             self.addPrice('Bag (38 L)')
@@ -204,7 +207,7 @@ class Person:
     def addExtras(self):
         sleeves = int(self.row['Amount of sleeves'])
         for _ in range(sleeves):
-            self.addItem('Sleeves (usikker)', None)
+            self.addItem('Sleeves', None)
             self.addPrice('Sleeves')
         
         amount_short = int(self.row['Amount of knee pads (short)'])
@@ -259,7 +262,7 @@ class Person:
 
         colors = ['Sort']*black+['Rød']*red+['Grønn']*green
         for color in colors:
-            self.addItem('Kompresjonsgenser', size, color=color)
+            self.addItem('Kompresjonsgenser (unisex)', size, color=color)
             self.addPrice('Kompresjonsgenser')
 
     def create_order(self):
