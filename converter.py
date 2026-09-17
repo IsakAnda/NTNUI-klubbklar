@@ -3,6 +3,8 @@ Class for turning a pd.df to a nice NTNUI excel file.
 '''
 
 import pandas as pd
+from pathlib import Path
+
 
 def converter(order: pd.DataFrame, filename, sheet_name = 'sheet1'):
     team_order = ['H-ELITE', 'H1', 'H2A', 'H2B', 'H2C', 'H3A', 'H3B', 'H3C','H4A', 'H4B', 'H4C', 'H4D', 'H-Bredde','D-ELITE', 'D1', 'D2A', 'D2B', 'D2C', 'D3A', 'D3B', 'D3C','D4A', 'D4B', 'D4C', 'D4D', 'D-Bredde']
@@ -11,6 +13,10 @@ def converter(order: pd.DataFrame, filename, sheet_name = 'sheet1'):
         .sort_values(by=['_lag_order', 'Navn', 'Produkt'])
         .drop(columns='_lag_order')
     )
+    if Path(filename).is_file():
+        mode = 'a'
+    else:
+        mode = 'w'
     
     teams = list(dict.fromkeys(order['Lag'].to_list()))
     color_list = ['background-color:#FFE599', 'background-color:#FFF2CC']
