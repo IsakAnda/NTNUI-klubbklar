@@ -4,9 +4,10 @@ from datetime import datetime
 template = 'mal.xlsx'                               # Excel file for the diffrent product names and descriptions
 prices = 'prisliste.xlsx'                           # Excel file for the price of the diffrent products
 coaches = 'trenerrabatt_2627.xlsx'                  # Excel file for a list of the coaches and how much discount they should get.
+template = 'info.xlsx'
 
 template_df = pd.read_excel(template)               
-price_df = pd.read_excel(prices)                    
+#price_df = pd.read_excel(prices)                    
 coaches_df = pd.read_excel(coaches, skiprows=2)     
 
 class Person:
@@ -51,9 +52,9 @@ class Person:
 
     def addPrice(self, product, name_print=None, coachDiscount=False, comment = None):
         if name_print == None:
-            price = int(price_df.loc[price_df[price_df.columns[0]] == product, price_df.columns[1]].values[0])
+            price = int(template_df.loc[template_df[template_df.columns[0]] == product, template_df.columns[5]].values[0])
         else:
-            price = int(price_df.loc[price_df[price_df.columns[0]] == product, price_df.columns[2]].values[0])
+            price = int(template_df.loc[template_df[template_df.columns[0]] == product, template_df.columns[6]].values[0])
         price = price-self.coach_offer if coachDiscount else price
         if coachDiscount:
             if self.coach_error != None:
@@ -110,7 +111,7 @@ class Person:
 
         colors = ['Sort']*black+['Rød']*red+['Hvit']*white
         for color in colors:
-            self.addItem(f'Tskjorte ({self.model})', size, model=self.model, color=color, name_print=name_print, comment=comment)
+            self.addItem(f'Tskjorte', size, model=self.model, color=color, name_print=name_print, comment=comment)
             self.addPrice('Tskjorte', name_print=name_print, comment=comment)
 
     def addWarmUpSweatshirt(self):
@@ -126,7 +127,7 @@ class Person:
         colors = ['Sort']*black+['Grønn']*green+['Rød']*red
 
         for color in colors:
-            self.addItem(f'Oppvarmingsgenser ({self.model})', size, model=self.model, color=color, name_print=name_print, comment=comment)
+            self.addItem(f'Oppvarmingsgenser', size, model=self.model, color=color, name_print=name_print, comment=comment)
             self.addPrice('Oppvarmingsgenser', name_print=name_print, comment=comment)
 
     def addkHalfZip(self):
@@ -135,7 +136,7 @@ class Person:
         name_print = self.row['If yes, what should be printed on the back? 3'] if self.row['Do you want name print? 2'] == 'Ja/ Yes' else None
 
         for _ in range(amount):
-            self.addItem(f'Half-zip ({self.model})', size, model=self.model, name_print=name_print)
+            self.addItem(f'Half-zip', size, model=self.model, name_print=name_print)
             self.addPrice('Half-zip', name_print=name_print)
 
     def addHoodie(self):
@@ -144,7 +145,7 @@ class Person:
         name_print = None if self.row['Name to be printed on the back']==0 else self.row['Name to be printed on the back']
 
         for _ in range(amount):
-            self.addItem(f'Hettegenser ({self.model})', size, model=self.model, name_print=name_print)
+            self.addItem(f'Hettegenser', size, model=self.model, name_print=name_print)
             self.addPrice('Hettegenser', name_print=name_print)
 
     def addHoodjacket(self):
@@ -156,7 +157,7 @@ class Person:
         comment = 'Trener %' if coachdeal else None
 
         for _ in range(amount):
-            self.addItem(f'Hettejakke ({self.model})', size, model=self.model, name_print=name_print, comment=comment)
+            self.addItem(f'Hettejakke', size, model=self.model, name_print=name_print, comment=comment)
             self.addPrice('Hettejakke', name_print=name_print, coachDiscount=coachdeal)
 
 
@@ -166,7 +167,7 @@ class Person:
         name_print = None if self.row['Name to be printed on the back 3']==0 else self.row['Name to be printed on the back 3']
 
         for _ in range(amount):
-            self.addItem(f'Crewneck (unisex)', size, name_print=name_print)
+            self.addItem(f'Crewneck', size, name_print=name_print)
             self.addPrice('Crewneck', name_print=name_print)
 
     def addwomensShorts(self):
@@ -190,7 +191,7 @@ class Person:
         size = self.row["Size sweatpants"]
 
         for _ in range(amount):
-            self.addItem(f'Joggebukse (unisex)', size)
+            self.addItem(f'Joggebukse', size)
             self.addPrice('Joggebukse')
 
     def addEverydaySweaters(self):
@@ -209,16 +210,16 @@ class Person:
         bag65 = int(self.row['Amount of backpacks (65L)'])
 
         for _ in range(bag65):
-            self.addItem('Bag (stor)', 'L')
-            self.addPrice('Bag (65 L)')
+            self.addItem('Bag (65L)', 'L', model='OZ')
+            self.addPrice('Bag (65L)')
         for _ in range(bag38):
-            self.addItem('Bag (liten)', 'S')
-            self.addPrice('Bag (38 L)')
+            self.addItem('Bag (38L)', 'S', model='OZ')
+            self.addPrice('Bag (38L)')
 
     def addExtras(self):
         sleeves = int(self.row['Amount of sleeves'])
         for _ in range(sleeves):
-            self.addItem('Sleeves', None)
+            self.addItem('Sleeves', None, model='OZ')
             self.addPrice('Sleeves')
         
         amount_short = int(self.row['Amount of knee pads (short)'])
@@ -239,8 +240,8 @@ class Person:
                 sizes[-amount_short//2:] = [size_bs]*(amount_short//2)
 
         for i in range(len(sizes)):
-            self.addItem('Knebeskytter (kort)', sizes[i], color=colors[i])
-            self.addPrice('Knebeskytter')
+            self.addItem('Knebeskytter (kort)', sizes[i], color=colors[i], model='OZ')
+            self.addPrice('Knebeskytter (kort)')
 
         amount_long = int(self.row['Amount knee pads (long)'])
         size_wl = self.row['Size white knee pads (long)']
@@ -261,7 +262,7 @@ class Person:
 
         for i in range(len(sizes)):
             self.addItem('Knebeskytter (lang)', sizes[i], color=colors[i])
-            self.addPrice('Knebeskytter')
+            self.addPrice('Knebeskytter (lang)')
 
 
 
@@ -273,7 +274,7 @@ class Person:
 
         colors = ['Sort']*black+['Rød']*red+['Grønn']*green
         for color in colors:
-            self.addItem('Kompresjonsgenser (unisex)', size, color=color)
+            self.addItem('Kompresjonsgenser', size, color=color)
             self.addPrice('Kompresjonsgenser')
 
     def create_order(self):

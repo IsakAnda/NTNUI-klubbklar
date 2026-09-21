@@ -5,7 +5,6 @@ Class for turning a pd.df to a nice NTNUI excel file.
 import pandas as pd
 from pathlib import Path
 
-from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, PatternFill
 
 
@@ -19,16 +18,6 @@ def converter(order: pd.DataFrame, filename, sheet_name = 'sheet1'):
 
     file_path = Path(filename)
 
-    if file_path.is_file():
-        wb = load_workbook(file_path)
-        if sheet_name in wb.sheetnames:
-            del wb[sheet_name]
-        ws = wb.create_sheet(title=sheet_name)
-    else:
-        wb = Workbook()
-        ws = wb.active
-        ws.title = sheet_name
-    
     teams = list(dict.fromkeys(order['Lag'].to_list()))
     color_list = ['background-color:#FFE599', 'background-color:#FFF2CC']
     def color_rows(row):
@@ -37,10 +26,13 @@ def converter(order: pd.DataFrame, filename, sheet_name = 'sheet1'):
 
     styled_df = order.style.apply(color_rows, axis=1)
 
-    with pd.ExcelWriter(filename, engine='openpyxl', mode='a') as writer:
+    writer_kwargs = {'engine': 'openpyxl', 'mode': 'a' if file_path.is_file() else 'w'}
+    if file_path.is_file():
+        writer_kwargs['if_sheet_exists'] = 'replace'
+
+    with pd.ExcelWriter(filename, **writer_kwargs) as writer:
         styled_df.to_excel(writer, sheet_name=sheet_name, index=False, startrow=1)
 
-        workbook  = writer.book
         worksheet = writer.sheets[sheet_name]
 
         green_fill = PatternFill(fill_type='solid', fgColor='93C47D')
