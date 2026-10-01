@@ -7,3 +7,7 @@ def timestamp_to_date_list(timestamp):
     return [date.day, date.month, date.year]
 
 print(timestamp_to_date_list('15.09.2026'))
+
+liste = [1,2]
+if liste == []: print('jo')
+else: print('no')

@@ -2,13 +2,14 @@ import pandas as pd
 from datetime import datetime
 
 template = 'mal.xlsx'                               # Excel file for the diffrent product names and descriptions
-prices = 'prisliste.xlsx'                           # Excel file for the price of the diffrent products
 coaches = 'trenerrabatt_2627.xlsx'                  # Excel file for a list of the coaches and how much discount they should get.
 template = 'info.xlsx'
+questions = 'bestilling_sporsmal.xlsx'
 
 template_df = pd.read_excel(template)               
 #price_df = pd.read_excel(prices)                    
-coaches_df = pd.read_excel(coaches, skiprows=2)     
+coaches_df = pd.read_excel(coaches, skiprows=2)
+questions_df = pd.read_excel(questions)
 
 class Person:
     def __init__(self,row, start_timestamp, stop_timestamp):
@@ -98,6 +99,45 @@ class Person:
             'Navnetrykk (rygg)': name_print,
             'Kommentar': comment}
         self.order.append(new_dict.copy())
+
+
+    def addProduct(self, product):
+        '''
+        Function for adding in any product
+        '''
+        if product not in questions_df['product']: return
+
+        product_df = questions_df[questions_df['product']==product]
+        size = self.row[product_df[product_df['thing']=='size']['question'].values[0]]
+        if size == product_df[product_df['thing']=='size']['bool-false'].values[0]: return
+
+        colors = product_df[product_df['thing']=='amount']
+        amount = {}
+        for _, color in colors.iterrows():
+            amount[color['color']]=int(self.row[color['question']])
+
+        name, comment, coach_discount = None, '', False
+
+        if 'name' in product_df['thing']:
+            name_qst = product_df[product_df['thing']=='name']['question']
+            name = self.row[name_qst].values[0]
+            if name == 0: name = None
+
+        if 'comment' in product_df['thing']:
+            comment_qst = product_df[product_df['thing']=='comment']['question']
+            comment = self.row[comment_qst].values[0]
+
+        if 'coach' in product_df['thing']:
+            coach_comment = product_df[product_df['thing']=='coach']['question']
+            if self.row[coach_comment[0]] != self.product_df[product_df['thing']=='coach']['bool-false'].values[0]: 
+                coach_discount = True
+                comment +='trener%'
+
+
+        for color_name, number in amount.items():
+            for i in range(number):
+                self.addItem(product=product, size=size, color=color_name, name_print=name,comment=comment)
+                self.addPrice(product=product, name_print=name, coachDiscount=coach_discount, comment=comment)
 
     def addTshirt(self):
         if self.row['Size of t-shirt(s)'] == 'Skal ikke ha':
@@ -278,7 +318,8 @@ class Person:
             self.addPrice('Kompresjonsgenser')
 
     def create_order(self):
-        self.addTshirt()
+        #self.addTshirt()
+        self.addProduct('Tskjorte')
         self.addWarmUpSweatshirt()
         self.addkHalfZip()
         self.addHoodie()
