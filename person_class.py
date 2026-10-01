@@ -17,8 +17,7 @@ class Person:
         self.team = row['Which team are you playing for? ']
         self.number = row['Your phone number']
         self.mail = row['E-postadresse']
-        self.timestamp = pd.to_datetime(row['Tidsmerke'], format='%Y-/%m-/%d %h:%m:%s')
-        print('timestamp:', self.timestamp)
+        self.timestamp = pd.to_datetime(row['Tidsmerke'], format='%Y-/%m-/%d %h:%m:%s').normalize()
         self.model = 'herre' if row['Which model do you want?'] == 'Men' else 'dame'
 
         self.inside_timeframe = self.check_timestamp(start_timestamp, stop_timestamp)
@@ -45,16 +44,7 @@ class Person:
         self.create_order()
 
     def check_timestamp(self, start_timestamp, stop_timestamp):
-        return self.timestamp > start_timestamp and self.timestamp < stop_timestamp
-
-
-
-        date_list = [int(self.timestamp[8:10]), int(self.timestamp[5:7]), int(self.timestamp[:4])]
-
-        if date_list[2] > date_list2[2] or date_list[2] < date_list1[2]: return False
-        if (date_list[1] > date_list2[1] and date_list[2] == date_list2[2]) or (date_list[1] < date_list1[1] and date_list[1] == date_list1[1]): return False
-        if (date_list[0] > date_list2[0] and date_list[1] == date_list2[1] and date_list[2] == date_list2[2]) or (date_list[0] < date_list1[0] and date_list[1] == date_list1[1] and date_list[2] == date_list1[2]): return False
-        return True
+        return self.timestamp > start_timestamp and self.timestamp <= stop_timestamp
 
     def addPrice(self, product, name_print=None, coachDiscount=False, comment = None):
         if name_print == None:
