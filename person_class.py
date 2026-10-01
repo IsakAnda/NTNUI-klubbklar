@@ -1,13 +1,10 @@
 import pandas as pd
-from datetime import datetime
 
-template = 'mal.xlsx'                               # Excel file for the diffrent product names and descriptions
 coaches = 'trenerrabatt_2627.xlsx'                  # Excel file for a list of the coaches and how much discount they should get.
-template = 'info.xlsx'
-questions = 'bestilling_sporsmal.xlsx'
+template = 'info.xlsx'                              # Excel file for the diffrent product names and descriptions
+questions = 'bestilling_sporsmal.xlsx'              # Excel file for all the questions ion the form to make it easier to add/change products and forms questions (Not in use currently)
 
-template_df = pd.read_excel(template)               
-#price_df = pd.read_excel(prices)                    
+template_df = pd.read_excel(template)                                  
 coaches_df = pd.read_excel(coaches, skiprows=2)
 questions_df = pd.read_excel(questions)
 
@@ -313,8 +310,14 @@ class Person:
             self.addPrice('Kompresjonsgenser')
 
     def create_order(self):
-        #self.addTshirt()
-        self.addProduct('Tskjorte')
+        '''
+        Creates the order and invoice
+        '''
+        for product in template_df.iloc[:,0]:
+            continue
+            self.addProduct(product)                          # FIXME sort of works but need to update the excel file.
+
+        self.addTshirt()
         self.addWarmUpSweatshirt()
         self.addkHalfZip()
         self.addHoodie()
